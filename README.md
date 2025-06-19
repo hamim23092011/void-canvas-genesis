@@ -148,7 +148,7 @@ npm run dev
 - `@supabase/supabase-js` - Supabase client
 - `react-router-dom` - Routing
 - `framer-motion` - Animations
-- `react-datepicker` - Date selection
+- `react-day-picker` - Date selection (via Shadcn Calendar)
 - `react-hook-form` - Form handling
 - `@tanstack/react-query` - Data fetching
 
