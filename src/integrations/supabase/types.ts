@@ -9,7 +9,128 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      items: {
+        Row: {
+          category: Database["public"]["Enums"]["item_category"]
+          contact_email: string
+          contact_name: string
+          created_at: string
+          date_lost_found: string
+          description: string
+          id: string
+          is_recovered: boolean
+          location: string
+          post_type: Database["public"]["Enums"]["post_type"]
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["item_category"]
+          contact_email: string
+          contact_name: string
+          created_at?: string
+          date_lost_found: string
+          description: string
+          id?: string
+          is_recovered?: boolean
+          location: string
+          post_type: Database["public"]["Enums"]["post_type"]
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["item_category"]
+          contact_email?: string
+          contact_name?: string
+          created_at?: string
+          date_lost_found?: string
+          description?: string
+          id?: string
+          is_recovered?: boolean
+          location?: string
+          post_type?: Database["public"]["Enums"]["post_type"]
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      recovered_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          recovered_by_user_id: string
+          recovered_location: string
+          recovered_person_email: string
+          recovered_person_image: string | null
+          recovered_person_name: string
+          recovery_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          recovered_by_user_id: string
+          recovered_location: string
+          recovered_person_email: string
+          recovered_person_image?: string | null
+          recovered_person_name: string
+          recovery_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          recovered_by_user_id?: string
+          recovered_location?: string
+          recovered_person_email?: string
+          recovered_person_image?: string | null
+          recovered_person_name?: string
+          recovery_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovered_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +139,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      item_category:
+        | "pets"
+        | "documents"
+        | "gadgets"
+        | "clothing"
+        | "jewelry"
+        | "keys"
+        | "bags"
+        | "other"
+      post_type: "Lost" | "Found"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +263,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      item_category: [
+        "pets",
+        "documents",
+        "gadgets",
+        "clothing",
+        "jewelry",
+        "keys",
+        "bags",
+        "other",
+      ],
+      post_type: ["Lost", "Found"],
+    },
   },
 } as const
