@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, MapPin, FileText, Tag } from 'lucide-react';
 
 const categories = [
   'pets',
@@ -35,9 +34,9 @@ export default function AddItems() {
     contactEmail: '',
     thumbnailUrl: ''
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -61,23 +60,25 @@ export default function AddItems() {
   const uploadImage = async (): Promise<string | null> => {
     if (!selectedImage || !user) return null;
 
-    const fileExt = selectedImage.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+    try {
+      const fileExt = selectedImage.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-    const { data, error } = await supabase.storage
-      .from('item-images')
-      .upload(fileName, selectedImage);
+      const { data, error } = await supabase.storage
+        .from('item-images')
+        .upload(fileName, selectedImage);
 
-    if (error) {
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('item-images')
+        .getPublicUrl(data.path);
+
+      return publicUrl;
+    } catch (error) {
       console.error('Error uploading image:', error);
       return null;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('item-images')
-      .getPublicUrl(data.path);
-
-    return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,8 +96,9 @@ export default function AddItems() {
     setIsSubmitting(true);
     
     try {
-      // Upload image if selected
       let imageUrl = formData.thumbnailUrl;
+      
+      // Upload image if selected
       if (selectedImage) {
         const uploadedUrl = await uploadImage();
         if (uploadedUrl) {
@@ -313,42 +315,47 @@ export default function AddItems() {
                 </div>
 
                 {/* Image Upload */}
-                <div className="space-y-2">
-                  <Label htmlFor="imageUpload">Upload Photo (Optional)</Label>
-                  <Input
-                    id="imageUpload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="cursor-pointer"
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="imageUpload">Upload Photo (Recommended)</Label>
+                    <Input
+                      id="imageUpload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Upload a photo to help others identify the item better.
+                    </p>
+                  </div>
+                  
                   {imagePreview && (
-                    <div className="mt-2">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-32 h-32 object-cover rounded-lg border"
-                      />
+                    <div className="space-y-2">
+                      <Label>Image Preview</Label>
+                      <div className="relative w-full h-48 border border-border rounded-lg overflow-hidden">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Upload a photo to help others identify the item better.
-                  </p>
-                </div>
 
-                {/* Photo URL */}
-                <div className="space-y-2">
-                  <Label htmlFor="thumbnailUrl">Or Photo URL (Optional)</Label>
-                  <Input
-                    id="thumbnailUrl"
-                    type="url"
-                    placeholder="https://example.com/photo.jpg"
-                    value={formData.thumbnailUrl}
-                    onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Alternatively, add a photo URL if you have one online.
-                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="thumbnailUrl">Or Photo URL</Label>
+                    <Input
+                      id="thumbnailUrl"
+                      type="url"
+                      placeholder="https://example.com/photo.jpg"
+                      value={formData.thumbnailUrl}
+                      onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Alternatively, provide a photo URL if you prefer.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Submit Button */}
