@@ -36,12 +36,48 @@ export default function AddItems() {
     thumbnailUrl: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedImage || !user) return null;
+
+    const fileExt = selectedImage.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('item-images')
+      .upload(fileName, selectedImage);
+
+    if (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('item-images')
+      .getPublicUrl(data.path);
+
+    return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,6 +95,15 @@ export default function AddItems() {
     setIsSubmitting(true);
     
     try {
+      // Upload image if selected
+      let imageUrl = formData.thumbnailUrl;
+      if (selectedImage) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       const { data, error } = await supabase
         .from('items')
         .insert([
@@ -71,7 +116,7 @@ export default function AddItems() {
             date_lost_found: formData.dateLostFound,
             contact_name: formData.contactName,
             contact_email: formData.contactEmail,
-            thumbnail_url: formData.thumbnailUrl || null,
+            thumbnail_url: imageUrl || null,
             user_id: user.id,
             is_recovered: false
           }
@@ -267,9 +312,33 @@ export default function AddItems() {
                   </div>
                 </div>
 
+                {/* Image Upload */}
+                <div className="space-y-2">
+                  <Label htmlFor="imageUpload">Upload Photo (Optional)</Label>
+                  <Input
+                    id="imageUpload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="cursor-pointer"
+                  />
+                  {imagePreview && (
+                    <div className="mt-2">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-32 h-32 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Upload a photo to help others identify the item better.
+                  </p>
+                </div>
+
                 {/* Photo URL */}
                 <div className="space-y-2">
-                  <Label htmlFor="thumbnailUrl">Photo URL (Optional)</Label>
+                  <Label htmlFor="thumbnailUrl">Or Photo URL (Optional)</Label>
                   <Input
                     id="thumbnailUrl"
                     type="url"
@@ -278,7 +347,7 @@ export default function AddItems() {
                     onChange={(e) => handleInputChange('thumbnailUrl', e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Add a photo URL to help others identify the item better.
+                    Alternatively, add a photo URL if you have one online.
                   </p>
                 </div>
 
